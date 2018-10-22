@@ -20,7 +20,7 @@
 	 terminate/2,
 	 code_change/3]).
 
--record(state, {items}).
+-record(state, {pids}).
 
 %% API.
 
@@ -45,38 +45,63 @@ delete(Pid, Key) ->
 %% gen_server.
 
 init([]) ->
-    {ok, #state{items=#{}}}.
+    {ok, #state{pids=#{}}}.
 
-%% need to return values for each pid
-
-handle_call(items, _From, #state{items=Items}=State) ->
+handle_call(items, _From, #state{pids=Pids}=State) ->
+    Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),
     {reply, Items, State};
-handle_call({add, _Key, _Value}, _From, #state{items=_Items}=State) ->
-    %% check if pid exists
-    %% spawn pid
-    %% monitor pid
-    {reply, ok, State};
-handle_call({get, _Key}, _From, #state{items=_Items}=State) ->
-    %% find pid
-    %% return value
-    {reply, ok, State};
-handle_call({set, _Key, _Value}, _From, #state{items=_Items}=State) ->
-    %% check if pid exists
-    %% spawn pid
-    %% monitor pid
-    {reply, ok, State};
-handle_call({delete, _Key}, _From, #state{items=_Items}=State) ->
-    %% find pid
-    %% send stop messages
-    {reply, ok, State};
+handle_call({add, AddKey, _Value}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
+    case maps:is_key(AddKey, Keys) of
+	true ->
+	    {reply, {error, <<"pid already exists">>}, State};
+	false ->
+	    {reply, ok, State}
+    end;
+handle_call({get, GetKey}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
+    case maps:is_key(GetKey, Keys) of
+	true ->
+	    {reply, ok, State};
+	false ->
+	    {reply, {error, <<"pid not found">>}, State}
+    end;
+handle_call({set, SetKey, _Value}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
+    case maps:is_key(SetKey, Keys) of
+	true ->
+	    {reply, ok, State};
+	false ->
+	    {reply, ok, State}
+    end;
+handle_call({delete, DelKey}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
+    case maps:is_key(DelKey, Keys) of
+	true ->
+	    {reply, ok, State};
+	false ->
+	    {reply, {error, <<"pid not found">>}, State}
+    end;
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-%% handle DOWN, EXIT
-%% remove from items
+handle_info({'DOWN', _Ref, process, Pid, _Reason}, #state{pids=Pids}=State) -> 
+    case maps:is_key(Pid, Pids) of
+	true -> 
+	    {noreply, State};
+	false ->
+	    {noreply, State}
+    end;
+handle_info({'EXIT', _Ref, process, Pid, _Reason}, #state{pids=Pids}=State) ->
+    case maps:is_key(Pid, Pids) of
+	true -> 
+	    {noreply, State};
+	false ->
+	    {noreply, State}
+    end; 
 handle_info(_Info, State) ->
     {noreply, State}.
 
