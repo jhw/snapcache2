@@ -50,33 +50,33 @@ init([]) ->
 handle_call(items, _From, #state{pids=Pids}=State) ->
     Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),
     {reply, Items, State};
-handle_call({add, AddKey, _Value}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
-    case maps:is_key(AddKey, Keys) of
+handle_call({add, Key, _Value}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
 	    {reply, ok, State}
     end;
-handle_call({get, GetKey}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
-    case maps:is_key(GetKey, Keys) of
+handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, ok, State};
 	false ->
 	    {reply, {error, <<"pid not found">>}, State}
     end;
-handle_call({set, SetKey, _Value}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
-    case maps:is_key(SetKey, Keys) of
+handle_call({set, Key, _Value}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, ok, State};
 	false ->
 	    {reply, ok, State}
     end;
-handle_call({delete, DelKey}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{Key, Pid} || {Pid, Key} <- Pids]),
-    case maps:is_key(DelKey, Keys) of
+handle_call({delete, Key}, _From, #state{pids=Pids}=State) ->
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, ok, State};
 	false ->
