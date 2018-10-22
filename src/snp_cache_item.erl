@@ -4,7 +4,9 @@
 
 %% API.
 
--export([start_link/0]).
+-export([start_link/2,
+	 value/1,
+	 expiry/1]).
 
 %% gen_server.
 
@@ -15,18 +17,31 @@
 	 terminate/2,
 	 code_change/3]).
 
--record(state, {}).
+-record(state, {value, expiry}).
 
 %% API.
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Value, Expiry) ->
+    gen_server:start_link(?MODULE, [Value, Expiry], []).
+
+%% add GS_GLOBAL_TIMEOUT ?
+
+value(Pid) ->
+    gen_server:call(Pid, value).
+
+expiry(Pid) ->
+    gen_server:call(Pid, expiry).
 
 %% gen_server.
 
-init([]) ->
-    {ok, #state{}}.
+init([Value, Expiry]) ->
+    {ok, #state{value=Value,
+		expiry=Expiry}}.
 
+handle_call(value, _From, #state{value=Value}=State) ->
+    {reply, Value, State};
+handle_call(expiry, _From, #state{expiry=Expiry}=State) ->
+    {reply, Expiry, State};
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
