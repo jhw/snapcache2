@@ -1,7 +1,7 @@
 import json, os, re, yaml
 
 def logs(pat="."):
-    os.system("tail -F log/bfe.log | grep \"%s\"" % pat)
+    os.system("tail -F log/snp.log | grep \"%s\"" % pat)
 
 def crash():
     os.system("tail -F log/crash.log")
