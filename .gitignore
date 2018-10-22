@@ -1,0 +1,9 @@
+.erlang.mk
+_rel
+*.d
+ebin
+*.pyc
+tmp
+deps
+erl_crash.dump
+log
