@@ -1,4 +1,4 @@
--module(snp_sup).
+-module(snp_cache_sup).
 
 -behaviour(supervisor).
 
