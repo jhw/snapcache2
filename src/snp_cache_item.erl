@@ -66,5 +66,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% internal functions
 
-secs_to_expiry(_) ->
-    undefined.
+secs_to_expiry(Secs) when is_integer(Secs) ->
+    Secs;
+secs_to_expiry(Expiry) ->
+    max(0, timedelta(now_utc(), Expiry)).
+
+
