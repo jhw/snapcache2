@@ -6,9 +6,9 @@
 
 -export([start_link/1,
 	 items/1,
-	 add/3,
+	 add/4,
 	 get/2,
-	 set/3,
+	 set/4,
 	 delete/2]).
 
 %% gen_server.
@@ -32,14 +32,14 @@ start_link(Id) ->
 items(Id) ->
     gen_server:call(registry(?MODULE, Id), items).
 
-add(Id, Key, Value) ->
-    gen_server:call(registry(?MODULE, Id), {add, Key, Value}).
+add(Id, Key, Value, Expiry) ->
+    gen_server:call(registry(?MODULE, Id), {add, Key, Value, Expiry}).
 
 get(Id, Key) ->
     gen_server:call(registry(?MODULE, Id), {get, Key}).
 
-set(Id, Key, Value) ->
-    gen_server:call(registry(?MODULE, Id), {set, Key, Value}).
+set(Id, Key, Value, Expiry) ->
+    gen_server:call(registry(?MODULE, Id), {set, Key, Value, Expiry}).
 
 delete(Id, Key) ->
     gen_server:call(registry(?MODULE, Id), {delete, Key}).
@@ -54,13 +54,13 @@ init([Id]) ->
 handle_call(items, _From, #state{pids=Pids}=State) ->
     Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),
     {reply, Items, State};
-handle_call({add, Key, Value}, _From, #state{id=Id, pids=Pids}=State) ->
+handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
 	    erlang:monitor(process, Pid),
 	    NewPids=maps:put(Pid, Key, Pids),
 	    {reply, ok, State#state{pids=NewPids}}
@@ -75,18 +75,18 @@ handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
 	false ->
 	    {reply, {error, <<"pid not found">>}, State}
     end;
-handle_call({set, Key, Value}, _From, #state{id=Id, pids=Pids}=State) ->
+handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
 	    OldPid=maps:get(Key, Keys),
 	    snp_cache_item:stop(OldPid),
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
 	    erlang:monitor(process, Pid),
 	    NewPids=maps:put(Pid, Key, Pids),
 	    {reply, ok, State#state{pids=NewPids}};
 	false ->
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
 	    erlang:monitor(process, Pid),
 	    NewPids=maps:put(Pid, Key, Pids),
 	    {reply, ok, State#state{pids=NewPids}}
