@@ -4,7 +4,7 @@
 
 %% API.
 
--export([start_link/0,
+-export([start_link/1,
 	 items/1,
 	 add/3,
 	 get/2,
@@ -20,12 +20,14 @@
 	 terminate/2,
 	 code_change/3]).
 
--record(state, {pids}).
+-import(snp_registry, [registry/2]).
+
+-record(state, {id, pids}).
 
 %% API.
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Id) ->
+    gen_server:start_link({local, registry(?MODULE, Id)}, [Id], []).
 
 items(Pid) ->
     gen_server:call(Pid, items).
@@ -44,8 +46,9 @@ delete(Pid, Key) ->
 
 %% gen_server.
 
-init([]) ->
-    {ok, #state{pids=#{}}}.
+init([Id]) ->
+    {ok, #state{id=Id,
+		pids=#{}}}.
 
 handle_call(items, _From, #state{pids=Pids}=State) ->
     Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),

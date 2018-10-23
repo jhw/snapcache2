@@ -1,5 +1,6 @@
 ### short
 
+- cache naming code
 
 - complete cache api
 - complete cache_item_sup spawning code
