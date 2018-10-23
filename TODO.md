@@ -1,6 +1,6 @@
 ### short
 
-- add cache protection in case expiry < today
+- expiry < today protection doesn't handle integers
 
 - abstract cache API code
 - demo to test spawning cache item
@@ -12,6 +12,7 @@
 
 ### done
 
+- add cache protection in case expiry < today
 - add expiry to add, set
 - complete cache api code
 - replace cache api refs to Pid with registry(Id)

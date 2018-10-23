@@ -22,6 +22,8 @@
 
 -import(snp_registry, [registry/2]).
 
+-import(wol_datetime, [now_utc/0]).
+
 -record(state, {id, pids}).
 
 %% API.
@@ -60,11 +62,17 @@ handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
-	    erlang:monitor(process, Pid),
-	    NewPids=maps:put(Pid, Key, Pids),
-	    {reply, ok, State#state{pids=NewPids}}
+	    case now_utc() < Expiry of
+		true ->
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    erlang:monitor(process, Pid),
+		    NewPids=maps:put(Pid, Key, Pids),
+		    {reply, ok, State#state{pids=NewPids}};
+		false ->
+		    {reply, {error, <<"expiry < now">>}, State}
+	    end
     end;
+
 handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
@@ -81,15 +89,25 @@ handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    OldPid=maps:get(Key, Keys),
 	    snp_cache_item:stop(OldPid),
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
-	    erlang:monitor(process, Pid),
-	    NewPids=maps:put(Pid, Key, Pids),
-	    {reply, ok, State#state{pids=NewPids}};
+	    case now_utc() < Expiry of
+		true ->
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    erlang:monitor(process, Pid),
+		    NewPids=maps:put(Pid, Key, Pids),
+		    {reply, ok, State#state{pids=NewPids}};
+		false ->
+		    {reply, {error, <<"expiry < now">>}, State}
+	    end;
 	false ->
-	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
-	    erlang:monitor(process, Pid),
-	    NewPids=maps:put(Pid, Key, Pids),
-	    {reply, ok, State#state{pids=NewPids}}
+	    case now_utc() < Expiry of
+		true ->
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    erlang:monitor(process, Pid),
+		    NewPids=maps:put(Pid, Key, Pids),
+		    {reply, ok, State#state{pids=NewPids}};
+		false ->
+		    {reply, {error, <<"expiry < now">>}, State}
+	    end
     end;
 handle_call({delete, Key}, _From, #state{pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
