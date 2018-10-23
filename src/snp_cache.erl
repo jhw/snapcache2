@@ -54,34 +54,49 @@ init([Id]) ->
 handle_call(items, _From, #state{pids=Pids}=State) ->
     Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),
     {reply, Items, State};
-handle_call({add, Key, _Value}, _From, #state{pids=Pids}=State) ->
+handle_call({add, Key, Value}, _From, #state{id=Id, pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
-	    {reply, ok, State}
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    erlang:monitor(process, Pid),
+	    NewPids=maps:put(Pid, Key, Pids),
+	    {reply, ok, State#state{pids=NewPids}}
     end;
 handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
-	    {reply, ok, State};
+	    Pid=maps:get(Key, Keys),
+	    Value=snp_cache_item:value(Pid),
+	    {reply, {ok, Value}, State};
 	false ->
 	    {reply, {error, <<"pid not found">>}, State}
     end;
-handle_call({set, Key, _Value}, _From, #state{pids=Pids}=State) ->
+handle_call({set, Key, Value}, _From, #state{id=Id, pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
-	    {reply, ok, State};
+	    OldPid=maps:get(Key, Keys),
+	    snp_cache_item:stop(OldPid),
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    erlang:monitor(process, Pid),
+	    NewPids=maps:put(Pid, Key, Pids),
+	    {reply, ok, State#state{pids=NewPids}};
 	false ->
-	    {reply, ok, State}
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Key, Value),
+	    erlang:monitor(process, Pid),
+	    NewPids=maps:put(Pid, Key, Pids),
+	    {reply, ok, State#state{pids=NewPids}}
     end;
 handle_call({delete, Key}, _From, #state{pids=Pids}=State) ->
     Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
     case maps:is_key(Key, Keys) of
 	true ->
+	    Pid=maps:get(Key, Keys),
+	    snp_cache_item:stop(Pid),
 	    {reply, ok, State};
 	false ->
 	    {reply, {error, <<"pid not found">>}, State}

@@ -1,6 +1,7 @@
 ### short
 
-- complete cache api code
+- add expiry to add, set
+
 - demo to test spawning cache item
 - demo to test full cache api
 - add cache protection in case expiry < today
@@ -11,6 +12,7 @@
 
 ### done
 
+- complete cache api code
 - replace cache api refs to Pid with registry(Id)
 - cache naming code
 - cache item spawn code
