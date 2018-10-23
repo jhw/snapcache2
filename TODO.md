@@ -1,6 +1,5 @@
 ### short
 
-- replace cache api refs to Pid with registry(Id)
 - complete cache api code
 - demo to test spawning cache item
 - demo to test full cache api
@@ -12,6 +11,7 @@
 
 ### done
 
+- replace cache api refs to Pid with registry(Id)
 - cache naming code
 - cache item spawn code
 - spawn item sup with registry

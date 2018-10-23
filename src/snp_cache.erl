@@ -29,20 +29,20 @@
 start_link(Id) ->
     gen_server:start_link({local, registry(?MODULE, Id)}, ?MODULE, [Id], []).
 
-items(Pid) ->
-    gen_server:call(Pid, items).
+items(Id) ->
+    gen_server:call(registry(?MODULE, Id), items).
 
-add(Pid, Key, Value) ->
-    gen_server:call(Pid, {add, Key, Value}).
+add(Id, Key, Value) ->
+    gen_server:call(registry(?MODULE, Id), {add, Key, Value}).
 
-get(Pid, Key) ->
-    gen_server:call(Pid, {get, Key}).
+get(Id, Key) ->
+    gen_server:call(registry(?MODULE, Id), {get, Key}).
 
-set(Pid, Key, Value) ->
-    gen_server:call(Pid, {set, Key, Value}).
+set(Id, Key, Value) ->
+    gen_server:call(registry(?MODULE, Id), {set, Key, Value}).
 
-delete(Pid, Key) ->
-    gen_server:call(Pid, {delete, Key}).
+delete(Id, Key) ->
+    gen_server:call(registry(?MODULE, Id), {delete, Key}).
 
 %% gen_server.
 
