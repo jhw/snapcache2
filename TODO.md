@@ -1,13 +1,14 @@
 ### short
 
-- cache naming code
-
-- complete cache api
-- complete cache_item_sup spawning code
-- demo to test cache/cahc
+- replace cache api refs to Pid with registry(Id)
+- complete cache api code
+- demo to test spawning cache item
+- demo to test full cache api
+- add cache protection in case expiry < today
 
 ### done
 
+- cache naming code
 - cache item spawn code
 - spawn item sup with registry
 - github project

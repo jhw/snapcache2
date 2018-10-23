@@ -18,5 +18,5 @@ start_link(Id) ->
 
 init([Id]) ->
     Procs=[init_permanent_worker(registry(snp_cache, Id), snp_cache, [Id]),
-	   init_permanent_sup(registry(snp_cache_sup, Id), snp_cache_sup, [Id])],
+	   init_permanent_sup(registry(snp_cache_item_sup, Id), snp_cache_item_sup, [Id])],
     {ok, {?SHUTDOWN_POLICY, Procs}}.

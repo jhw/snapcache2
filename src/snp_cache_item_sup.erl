@@ -15,13 +15,14 @@
 -define(SHUTDOWN_POLICY, {one_for_one, 5, 5}).
 
 start_link(Id) ->
-    supervisor:start_link({local, registry(?MODULE, Id)}, ?MODULE, []).
+    supervisor:start_link({local, registry(?MODULE, Id)}, ?MODULE, [Id]).
 
 spawn(Id, Value, Expiry) ->
     Proc=init_transient_worker(random_id(32), snp_cache_item, [Value, Expiry]),
     supervisor:start_child(registry(?MODULE, Id), Proc),
     ok.
 
-init([]) ->
+init([Id]) ->
+    lager:info("~s started", [Id]),
     Procs=[],
     {ok, {?SHUTDOWN_POLICY, Procs}}.

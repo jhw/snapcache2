@@ -27,7 +27,7 @@
 %% API.
 
 start_link(Id) ->
-    gen_server:start_link({local, registry(?MODULE, Id)}, [Id], []).
+    gen_server:start_link({local, registry(?MODULE, Id)}, ?MODULE, [Id], []).
 
 items(Pid) ->
     gen_server:call(Pid, items).
@@ -47,6 +47,7 @@ delete(Pid, Key) ->
 %% gen_server.
 
 init([Id]) ->
+    lager:info("~s started", [Id]),
     {ok, #state{id=Id,
 		pids=#{}}}.
 
