@@ -6,6 +6,7 @@
 
 ### done
 
+- spawn item sup with registry
 - github project
 - add cache_item expiry calculations
 - add timedelta to wol_datetime
