@@ -6,6 +6,10 @@
 - demo to test full cache api
 - add cache protection in case expiry < today
 
+### thoughts
+
+- [all] remove cowboy handlers ?
+
 ### done
 
 - cache naming code
