@@ -1,6 +1,5 @@
 ### short
 
-- demo to test spawning cache item
 - demo to test full cache api
 
 ### thoughts
@@ -9,6 +8,7 @@
 
 ### done
 
+- demo to test spawning cache item
 - lager logging
 - abstract cache API code
 - expiry < today protection doesn't handle integers

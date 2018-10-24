@@ -19,8 +19,7 @@ start_link(Id) ->
 
 spawn(Id, Value, Expiry) ->
     Proc=init_transient_worker(random_id(32), snp_cache_item, [Value, Expiry]),
-    supervisor:start_child(registry(?MODULE, Id), Proc),
-    ok.
+    supervisor:start_child(registry(?MODULE, Id), Proc).
 
 init([Id]) ->
     lager:info("~s started", [Id]),

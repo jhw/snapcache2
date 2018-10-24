@@ -72,10 +72,10 @@ handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
     case lookup_pid(Key, Pids) of
 	undefined ->
-	    {reply, {error, <<"pid not found">>}, State};
+	    {reply, undefined, State};
 	Pid ->
 	    Value=snp_cache_item:value(Pid),
-	    {reply, {ok, Value}, State}
+	    {reply, Value, State}
     end;
 handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
     case lookup_pid(Key, Pids) of
@@ -141,7 +141,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% internal functions
 
 lookup_pid(Key, Pids) ->    
-    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- maps:to_list(Pids)]),
     case maps:is_key(Key, Keys) of
 	true ->
 	    maps:get(Key, Keys);

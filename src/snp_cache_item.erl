@@ -6,7 +6,8 @@
 
 -export([start_link/2,
 	 value/1,
-	 expiry/1]).
+	 expiry/1,
+	 stop/1]).
 
 %% gen_server.
 
@@ -32,6 +33,9 @@ value(Pid) ->
 expiry(Pid) ->
     gen_server:call(Pid, expiry).
 
+stop(Pid) ->
+    gen_server:cast(Pid, stop).
+
 %% gen_server.
 
 init([Value, Expiry]) ->
@@ -46,6 +50,8 @@ handle_call(expiry, _From, #state{expiry=Expiry}=State) ->
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
+handle_cast(stop, State) ->
+    {stop, normal, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
