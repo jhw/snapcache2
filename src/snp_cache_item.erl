@@ -25,8 +25,6 @@
 start_link(Value, Expiry) ->
     gen_server:start_link(?MODULE, [Value, Expiry], []).
 
-%% add GS_GLOBAL_TIMEOUT ?
-
 value(Pid) ->
     gen_server:call(Pid, value).
 

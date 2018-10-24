@@ -1,6 +1,8 @@
 ### short
 
-- add GS_GLOBAL_WAIT
+- improve test layout
+
+- [all] remove GS_GLOBAL_TIMEOUT
 
 ### thoughts
 
