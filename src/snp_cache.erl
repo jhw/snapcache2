@@ -109,17 +109,23 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({'DOWN', _Ref, process, Pid, _Reason}, #state{pids=Pids}=State) -> 
+handle_info({'DOWN', _Ref, process, Pid, _Reason}, #state{id=Id, pids=Pids}=State) -> 
     case maps:is_key(Pid, Pids) of
 	true -> 
-	    {noreply, State};
+	    Key=maps:get(Pid, Pids),
+	    lager:info("~s: ~s is DOWN", [Id, Key]),
+	    NewPids=maps:remove(Pid, Pids),
+	    {noreply, State#state{pids=NewPids}};
 	false ->
 	    {noreply, State}
     end;
-handle_info({'EXIT', _Ref, process, Pid, _Reason}, #state{pids=Pids}=State) ->
+handle_info({'EXIT', _Ref, process, Pid, _Reason}, #state{id=Id, pids=Pids}=State) ->
     case maps:is_key(Pid, Pids) of
 	true -> 
-	    {noreply, State};
+	    Key=maps:get(Pid, Pids),
+	    lager:info("~s: ~s EXIT message", [Id, Key]),
+	    NewPids=maps:remove(Pid, Pids),
+	    {noreply, State#state{pids=NewPids}};
 	false ->
 	    {noreply, State}
     end; 
@@ -148,6 +154,7 @@ spawn_item(Id, Key, Value, Expiry, Pids) ->
     case SecsToExpiry > 0 of
 	true ->
 	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
+	    lager:info("~s spawning ~s:~p [~p]", [Id, Key, Value, Expiry]),
 	    erlang:monitor(process, Pid),
 	    NewPids=maps:put(Pid, Key, Pids),
 	    {ok, NewPids};
