@@ -38,4 +38,12 @@ run() ->
     sleep(1),
     delete(?ID, <<"foo">>),
     list(?ID),
+    %% add twice
+    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
+    list(?ID),
+    sleep(1),
+    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
+    list(?ID),
+    sleep(3),
+    list(?ID),
     ok.

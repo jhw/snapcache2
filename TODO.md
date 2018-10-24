@@ -1,6 +1,6 @@
 ### short
 
-- demo to test full cache api
+- add GS_GLOBAL_WAIT
 
 ### thoughts
 
@@ -8,6 +8,7 @@
 
 ### done
 
+- demo to test full cache api
 - demo to test spawning cache item
 - lager logging
 - abstract cache API code
