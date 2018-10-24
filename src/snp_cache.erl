@@ -22,7 +22,8 @@
 
 -import(snp_registry, [registry/2]).
 
--import(wol_datetime, [now_utc/0]).
+-import(wol_datetime, [timedelta/2,
+		       now_utc/0]).
 
 -record(state, {id, pids}).
 
@@ -62,9 +63,10 @@ handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
-	    case now_utc() < Expiry of
+	    SecsToExpiry=secs_to_expiry(Expiry),
+	    case SecsToExpiry > 0 of
 		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
 		    erlang:monitor(process, Pid),
 		    NewPids=maps:put(Pid, Key, Pids),
 		    {reply, ok, State#state{pids=NewPids}};
@@ -89,9 +91,10 @@ handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    OldPid=maps:get(Key, Keys),
 	    snp_cache_item:stop(OldPid),
-	    case now_utc() < Expiry of
+	    SecsToExpiry=secs_to_expiry(Expiry),
+	    case SecsToExpiry > 0 of
 		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
 		    erlang:monitor(process, Pid),
 		    NewPids=maps:put(Pid, Key, Pids),
 		    {reply, ok, State#state{pids=NewPids}};
@@ -99,9 +102,10 @@ handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 		    {reply, {error, <<"expiry < now">>}, State}
 	    end;
 	false ->
-	    case now_utc() < Expiry of
+	    SecsToExpiry=secs_to_expiry(Expiry),
+	    case SecsToExpiry > 0 of
 		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, Expiry),
+		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
 		    erlang:monitor(process, Pid),
 		    NewPids=maps:put(Pid, Key, Pids),
 		    {reply, ok, State#state{pids=NewPids}};
@@ -147,3 +151,12 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%% internal functions
+
+secs_to_expiry(Secs) when is_integer(Secs) ->
+    Secs;
+secs_to_expiry(Expiry) ->
+    timedelta(now_utc(), Expiry).
+
+
