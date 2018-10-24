@@ -63,15 +63,11 @@ handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    {reply, {error, <<"pid already exists">>}, State};
 	false ->
-	    SecsToExpiry=secs_to_expiry(Expiry),
-	    case SecsToExpiry > 0 of
-		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
-		    erlang:monitor(process, Pid),
-		    NewPids=maps:put(Pid, Key, Pids),
+	    case spawn_item(Id, Key, Value, Expiry, Pids) of
+		{ok, NewPids} ->
 		    {reply, ok, State#state{pids=NewPids}};
-		false ->
-		    {reply, {error, <<"expiry < now">>}, State}
+		Other ->
+		    {reply, Other, State}
 	    end
     end;
 
@@ -91,26 +87,18 @@ handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	true ->
 	    OldPid=maps:get(Key, Keys),
 	    snp_cache_item:stop(OldPid),
-	    SecsToExpiry=secs_to_expiry(Expiry),
-	    case SecsToExpiry > 0 of
-		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
-		    erlang:monitor(process, Pid),
-		    NewPids=maps:put(Pid, Key, Pids),
+	    case spawn_item(Id, Key, Value, Expiry, Pids) of
+		{ok, NewPids} ->
 		    {reply, ok, State#state{pids=NewPids}};
-		false ->
-		    {reply, {error, <<"expiry < now">>}, State}
+		Other ->
+		    {reply, Other, State}
 	    end;
 	false ->
-	    SecsToExpiry=secs_to_expiry(Expiry),
-	    case SecsToExpiry > 0 of
-		true ->
-		    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
-		    erlang:monitor(process, Pid),
-		    NewPids=maps:put(Pid, Key, Pids),
+	    case spawn_item(Id, Key, Value, Expiry, Pids) of
+		{ok, NewPids} ->
 		    {reply, ok, State#state{pids=NewPids}};
-		false ->
-		    {reply, {error, <<"expiry < now">>}, State}
+		Other ->
+		    {reply, Other, State}
 	    end
     end;
 handle_call({delete, Key}, _From, #state{pids=Pids}=State) ->
@@ -154,6 +142,18 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% internal functions
 
+spawn_item(Id, Key, Value, Expiry, Pids) ->
+    SecsToExpiry=secs_to_expiry(Expiry),
+    case SecsToExpiry > 0 of
+	true ->
+	    {ok, Pid}=snp_cache_item_sup:spawn(Id, Value, SecsToExpiry),
+	    erlang:monitor(process, Pid),
+	    NewPids=maps:put(Pid, Key, Pids),
+	    {ok, NewPids};
+	false ->
+	    {error, <<"expiry < now">>}
+    end.
+    
 secs_to_expiry(Secs) when is_integer(Secs) ->
     Secs;
 secs_to_expiry(Expiry) ->
