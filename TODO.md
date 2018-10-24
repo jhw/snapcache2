@@ -2,7 +2,6 @@
 
 - lager logging
 
-- abstract cache API code
 - demo to test spawning cache item
 - demo to test full cache api
 
@@ -12,6 +11,7 @@
 
 ### done
 
+- abstract cache API code
 - expiry < today protection doesn't handle integers
 - add cache protection in case expiry < today
 - add expiry to add, set

@@ -58,42 +58,36 @@ handle_call(items, _From, #state{pids=Pids}=State) ->
     Items=maps:from_list([{Key, snp_cache_item:value(Pid)} || {Pid, Key} <- maps:to_list(Pids)]),
     {reply, Items, State};
 handle_call({add, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
-    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
-    case maps:is_key(Key, Keys) of
-	true ->
-	    {reply, {error, <<"pid already exists">>}, State};
-	false ->
-	    case spawn_item(Id, Key, Value, Expiry, Pids) of
-		{ok, NewPids} ->
-		    {reply, ok, State#state{pids=NewPids}};
-		Other ->
-		    {reply, Other, State}
-	    end
-    end;
-
-handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
-    case maps:is_key(Key, Keys) of
-	true ->
-	    Pid=maps:get(Key, Keys),
-	    Value=snp_cache_item:value(Pid),
-	    {reply, {ok, Value}, State};
-	false ->
-	    {reply, {error, <<"pid not found">>}, State}
-    end;
-handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
-    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
-    case maps:is_key(Key, Keys) of
-	true ->
-	    OldPid=maps:get(Key, Keys),
-	    snp_cache_item:stop(OldPid),
+    case lookup_pid(Key, Pids) of
+	undefined ->
 	    case spawn_item(Id, Key, Value, Expiry, Pids) of
 		{ok, NewPids} ->
 		    {reply, ok, State#state{pids=NewPids}};
 		Other ->
 		    {reply, Other, State}
 	    end;
-	false ->
+	_Pid ->
+	    {reply, {error, <<"pid already exists">>}, State}
+    end;
+handle_call({get, Key}, _From, #state{pids=Pids}=State) ->
+    case lookup_pid(Key, Pids) of
+	undefined ->
+	    {reply, {error, <<"pid not found">>}, State};
+	Pid ->
+	    Value=snp_cache_item:value(Pid),
+	    {reply, {ok, Value}, State}
+    end;
+handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
+    case lookup_pid(Key, Pids) of
+	undefined ->
+	    case spawn_item(Id, Key, Value, Expiry, Pids) of
+		{ok, NewPids} ->
+		    {reply, ok, State#state{pids=NewPids}};
+		Other ->
+		    {reply, Other, State}
+	    end;
+	Pid ->
+	    snp_cache_item:stop(Pid),
 	    case spawn_item(Id, Key, Value, Expiry, Pids) of
 		{ok, NewPids} ->
 		    {reply, ok, State#state{pids=NewPids}};
@@ -102,14 +96,12 @@ handle_call({set, Key, Value, Expiry}, _From, #state{id=Id, pids=Pids}=State) ->
 	    end
     end;
 handle_call({delete, Key}, _From, #state{pids=Pids}=State) ->
-    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
-    case maps:is_key(Key, Keys) of
-	true ->
-	    Pid=maps:get(Key, Keys),
+    case lookup_pid(Key, Pids) of
+	undefined ->
+	    {reply, {error, <<"pid not found">>}, State};
+	Pid ->
 	    snp_cache_item:stop(Pid),
-	    {reply, ok, State};
-	false ->
-	    {reply, {error, <<"pid not found">>}, State}
+	    {reply, ok, State}
     end;
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -141,6 +133,15 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% internal functions
+
+lookup_pid(Key, Pids) ->    
+    Keys=maps:from_list([{K, Pid} || {Pid, K} <- Pids]),
+    case maps:is_key(Key, Keys) of
+	true ->
+	    maps:get(Key, Keys);
+	false ->
+	    undefined
+    end.
 
 spawn_item(Id, Key, Value, Expiry, Pids) ->
     SecsToExpiry=secs_to_expiry(Expiry),
