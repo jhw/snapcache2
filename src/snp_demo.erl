@@ -12,44 +12,44 @@ sleep(Secs) ->
 
 test_add(Id) ->
     io:format("--- test_add ---~n"),
-    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    snp:add(Id, foo, bar, add_seconds(now_utc(), 1)),
     FooBar=#{foo => bar},
-    FooBar=snp_cache:items(Id),
-    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 2)),
-    FooBar=snp_cache:items(Id),    
+    FooBar=snp:items(Id),
+    snp:add(Id, foo, bar, add_seconds(now_utc(), 2)),
+    FooBar=snp:items(Id),    
     sleep(2),
-    #{}=snp_cache:items(Id),
+    #{}=snp:items(Id),
     ok.
 
 test_get(Id) ->
     io:format("--- test_get ---~n"),
-    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
-    bar=snp_cache:get(Id, foo),
+    snp:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    bar=snp:get(Id, foo),
     sleep(2),
-    #{}=snp_cache:items(Id),
+    #{}=snp:items(Id),
     ok.
 
 test_set(Id) ->
     io:format("--- test_set ---~n"),
-    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
-    bar=snp_cache:get(Id, foo),
-    snp_cache:set(Id, foo, car, add_seconds(now_utc(), 1)),
-    car=snp_cache:get(Id, foo),
+    snp:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    bar=snp:get(Id, foo),
+    snp:set(Id, foo, car, add_seconds(now_utc(), 1)),
+    car=snp:get(Id, foo),
     sleep(2),
-    #{}=snp_cache:items(Id),
+    #{}=snp:items(Id),
     ok.
 
 test_delete(Id) ->
     io:format("--- test_delete ---~n"),
-    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    snp:add(Id, foo, bar, add_seconds(now_utc(), 1)),
     FooBar=#{foo => bar},
-    FooBar=snp_cache:items(Id),
-    ok=snp_cache:delete(Id, foo),
-    #{}=snp_cache:items(Id),
+    FooBar=snp:items(Id),
+    ok=snp:delete(Id, foo),
+    #{}=snp:items(Id),
     ok.
 
 run() ->
-    snp_sup:spawn(?ID),
+    snp:spawn(?ID),
     sleep(1),
     ok=test_add(?ID),
     ok=test_get(?ID),

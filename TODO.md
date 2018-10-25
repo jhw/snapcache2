@@ -1,7 +1,5 @@
 ### short
 
-- improve test layout
-
 - [all] remove GS_GLOBAL_TIMEOUT
 
 ### thoughts
@@ -10,6 +8,8 @@
 
 ### done
 
+- top level api
+- improve test layout
 - demo to test full cache api
 - demo to test spawning cache item
 - lager logging
