@@ -7,43 +7,52 @@
 
 -define(ID, <<"ENG.1">>).
 
-dump(Stuff) ->
-    io:format("~p~n", [Stuff]).    
-
-list(Id) ->
-    dump(snp_cache:items(Id)).
-
-get(Id, Key) ->
-    dump(snp_cache:get(Id, Key)).
-
-delete(Id, Key) ->
-    dump(snp_cache:delete(Id, Key)).
-
 sleep(Secs) ->
     timer:sleep(timer:seconds(Secs)).    
 
+test_add(Id) ->
+    io:format("--- test_add ---~n"),
+    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    FooBar=#{foo => bar},
+    FooBar=snp_cache:items(Id),
+    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 2)),
+    FooBar=snp_cache:items(Id),    
+    sleep(2),
+    #{}=snp_cache:items(Id),
+    ok.
+
+test_get(Id) ->
+    io:format("--- test_get ---~n"),
+    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    bar=snp_cache:get(Id, foo),
+    sleep(2),
+    #{}=snp_cache:items(Id),
+    ok.
+
+test_set(Id) ->
+    io:format("--- test_set ---~n"),
+    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    bar=snp_cache:get(Id, foo),
+    snp_cache:set(Id, foo, car, add_seconds(now_utc(), 1)),
+    car=snp_cache:get(Id, foo),
+    sleep(2),
+    #{}=snp_cache:items(Id),
+    ok.
+
+test_delete(Id) ->
+    io:format("--- test_delete ---~n"),
+    snp_cache:add(Id, foo, bar, add_seconds(now_utc(), 1)),
+    FooBar=#{foo => bar},
+    FooBar=snp_cache:items(Id),
+    ok=snp_cache:delete(Id, foo),
+    #{}=snp_cache:items(Id),
+    ok.
+
 run() ->
     snp_sup:spawn(?ID),
-    list(?ID),
-    %% add/expire
-    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
     sleep(1),
-    list(?ID),    
-    get(?ID, <<"foo">>),
-    sleep(3),
-    list(?ID),
-    %% delete
-    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
-    list(?ID),
-    sleep(1),
-    delete(?ID, <<"foo">>),
-    list(?ID),
-    %% add twice
-    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
-    list(?ID),
-    sleep(1),
-    snp_cache:add(?ID, <<"foo">>, <<"bar">>, add_seconds(now_utc(), 3)),
-    list(?ID),
-    sleep(3),
-    list(?ID),
+    ok=test_add(?ID),
+    ok=test_get(?ID),
+    ok=test_set(?ID),
+    ok=test_delete(?ID),
     ok.
