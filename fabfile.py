@@ -1,7 +1,11 @@
-import json, os, re, yaml
+import json, os, re
 
 def logs(pat="."):
-    os.system("tail -F log/snp.log | grep \"%s\"" % pat)
+    def filter_appname():
+        tokens=[tok for tok in file("rel/vm.args").read().split("\n")
+                if tok.startswith("-setcookie")]
+        return tokens[0].split(" ")[-1]
+    os.system("tail -F log/%s.log | grep \"%s\"" % (filter_appname(), pat))
 
 def crash():
     os.system("tail -F log/crash.log")
@@ -99,6 +103,7 @@ def check_includes(srcdir="src"):
             continue
         errors.append("%s - %s.hrl unused" % (filename, appname))
     return errors
+
 
 def check():
     errors=[]
