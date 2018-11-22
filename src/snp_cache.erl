@@ -4,7 +4,7 @@
 
 %% API.
 
--export([start_link/1,
+-export([start_link/2,
 	 items/1,
 	 add/4,
 	 get/2,
@@ -25,12 +25,12 @@
 -import(wol_datetime, [timedelta/2,
 		       now_utc/0]).
 
--record(state, {id, pids}).
+-record(state, {id, callback, pids}).
 
 %% API.
 
-start_link(Id) ->
-    gen_server:start_link({local, registry(?MODULE, Id)}, ?MODULE, [Id], []).
+start_link(Id, Callback) ->
+    gen_server:start_link({local, registry(?MODULE, Id)}, ?MODULE, [Id, Callback], []).
 
 items(Id) ->
     gen_server:call(registry(?MODULE, Id), items).
@@ -49,9 +49,10 @@ delete(Id, Key) ->
 
 %% gen_server.
 
-init([Id]) ->
+init([Id, Callback]) ->
     lager:info("~s started", [Id]),
     {ok, #state{id=Id,
+		callback=Callback,
 		pids=#{}}}.
 
 handle_call(items, _From, #state{pids=Pids}=State) ->
@@ -109,10 +110,13 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({'DOWN', _Ref, process, Pid, _Reason}, #state{id=Id, pids=Pids}=State) -> 
+%% NB callback only called by DOWN not EXIT
+
+handle_info({'DOWN', _Ref, process, Pid, _Reason}, #state{id=Id, callback=Callback, pids=Pids}=State) -> 
     case maps:is_key(Pid, Pids) of
 	true -> 
 	    Key=maps:get(Pid, Pids),
+	    Callback(Key, Pid),
 	    lager:info("~s: ~s is DOWN", [Id, Key]),
 	    NewPids=maps:remove(Pid, Pids),
 	    {noreply, State#state{pids=NewPids}};

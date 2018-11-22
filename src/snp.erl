@@ -1,7 +1,10 @@
 -module(snp).
 
+-compile({no_auto_import,[spawn/2]}).
+
 -export([start/0,	 
 	 spawn/1,
+	 spawn/2,
 	 items/1,
 	 add/4,
 	 get/2,
@@ -12,7 +15,10 @@ start() ->
     application:ensure_all_started(?MODULE).
 
 spawn(Id) ->
-    snp_sup:spawn(Id).
+    spawn(Id, fun(_K, _V) -> void end).
+			    
+spawn(Id, Callback) ->
+    snp_sup:spawn(Id, Callback).
 
 items(Id) ->
     snp_cache:items(Id).

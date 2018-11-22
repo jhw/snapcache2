@@ -49,7 +49,8 @@ test_delete(Id) ->
     ok.
 
 run() ->
-    snp:spawn(?ID),
+    CallbackFn=fun(K, V) ->  io:format("~p => ~p~n", [K, V]) end,
+    snp:spawn(?ID, CallbackFn),
     sleep(1),
     ok=test_add(?ID),
     ok=test_get(?ID),

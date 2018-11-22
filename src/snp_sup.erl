@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 -export([start_link/0,
-	 spawn/1]).
+	 spawn/2]).
 
 -export([init/1]).
 
@@ -16,8 +16,8 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-spawn(Id) ->
-    Proc=init_permanent_sup(registry(snp_cache_sup, Id), snp_cache_sup, [Id]),
+spawn(Id, Callback) ->
+    Proc=init_permanent_sup(registry(snp_cache_sup, Id), snp_cache_sup, [Id, Callback]),
     supervisor:start_child(?MODULE, Proc),
     ok.
 

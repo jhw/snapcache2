@@ -1,12 +1,12 @@
 ### short
 
-- [all] remove GS_GLOBAL_TIMEOUT
-
 ### thoughts
 
 - [all] remove cowboy handlers ?
 
 ### done
+
+- [all] remove GS_GLOBAL_TIMEOUT
 
 - top level api
 - improve test layout
