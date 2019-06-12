@@ -4,7 +4,7 @@ PROJECT_VERSION = 0.1.0
 
 DEPS = wol lager
 
-dep_wol = git git@github.com:iosport/wol_commons.git master
+dep_wol = git git@github.com:jhw/wol_commons.git master
 
 SHELL_OPTS = \
   -s $(PROJECT) \
